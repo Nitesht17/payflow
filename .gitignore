@@ -1,0 +1,23 @@
+# Compiled files
+target/
+*.class
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Application secrets — NEVER commit these
+src/main/resources/application.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
