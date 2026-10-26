@@ -4,6 +4,7 @@ import com.payflow.payflow.dto.TransactionRequestDTO;
 import com.payflow.payflow.dto.TransactionResponseDTO;
 import com.payflow.payflow.dto.TransactionStatusUpdateDTO;
 import com.payflow.payflow.entity.Transaction;
+import com.payflow.payflow.ratelimit.RateLimit;
 import com.payflow.payflow.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.Getter;
@@ -24,6 +25,7 @@ public class TransactionController {
     }
 
     @PostMapping
+    @RateLimit(maxRequests = 5 , windowSeconds = 60)
     public ResponseEntity<TransactionResponseDTO> createTransaction(@Valid @RequestBody TransactionRequestDTO requestDTO)
     {
         TransactionResponseDTO response = transactionService.createTransaction(requestDTO);
