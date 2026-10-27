@@ -8,6 +8,7 @@ import com.payflow.payflow.entity.Transaction;
 import com.payflow.payflow.entity.TransactionStatus;
 import com.payflow.payflow.exception.InvalidStatusTransitionException;
 import com.payflow.payflow.exception.ResourceNotFoundException;
+import com.payflow.payflow.kafka.PaymentEventProducer;
 import com.payflow.payflow.repository.MerchantRepository;
 import com.payflow.payflow.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
@@ -22,11 +23,15 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final MerchantRepository merchantRepository;
+    private final PaymentEventProducer paymentEventProducer;
 
-    public TransactionService(TransactionRepository transactionRepository , MerchantRepository merchantRepository)
+    public TransactionService(TransactionRepository transactionRepository ,
+                              MerchantRepository merchantRepository ,
+                              PaymentEventProducer paymentEventProducer)
     {
         this.merchantRepository = merchantRepository;
         this.transactionRepository = transactionRepository;
+        this.paymentEventProducer = paymentEventProducer;
     }
 
     @Transactional
@@ -80,6 +85,12 @@ public class TransactionService {
         transaction.setUpdatedAt(LocalDateTime.now());
 
         Transaction saved = transactionRepository.save(transaction);
+
+        // Publish event to Kafka after status change
+        String event = String.format("{\"transactionId\": %d, \"merchantId\": %d, \"status\": \"%s\", \"amount\": %s}" ,
+                saved.getId() , saved.getMerchant().getId() , saved.getStatus() , saved.getAmount());
+
+        paymentEventProducer.publishPaymentEvent(event);
 
         return new TransactionResponseDTO(saved.getId(), saved.getMerchant().getId(), saved.getAmount(),
                 saved.getCurrency(), saved.getStatus(), saved.getCreatedAt(), saved.getUpdatedAt());
